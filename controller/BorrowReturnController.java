@@ -54,6 +54,7 @@ public class BorrowReturnController extends HttpServlet {
 
     private void showForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // Lấy danh sách sách và độc giả để hiển thị trong dropdown (select option)
         List<Book> books = bookDAO.getAllBooks();
         List<Reader> readers = readerDAO.getAllReaders();
         request.setAttribute("books", books);
@@ -62,27 +63,83 @@ public class BorrowReturnController extends HttpServlet {
         rd.forward(request, response);
     }
 
+    // Logic trả sách (Action: return)
     private void returnBook(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        int recordId = Integer.parseInt(request.getParameter("id"));
-        borrowDAO.returnBook(recordId);
+        try {
+            int recordId = Integer.parseInt(request.getParameter("id"));
+            BorrowRecord record = borrowDAO.getBorrowRecordById(recordId);
+            
+            if (record != null && !"Đã trả".equals(record.getStatus())) {
+                // 1. Cập nhật thông tin trả
+                record.setReturnDate(LocalDate.now());
+                record.setStatus("Đã trả");
+                // Có thể tính phạt ở đây nếu muốn
+                
+                // 2. Gọi DAO cập nhật phiếu mượn (Dùng updateBorrowRecord thay vì returnBook)
+                borrowDAO.updateBorrowRecord(record);
+
+                // 3. Tăng số lượng sách còn lại lên 1
+                Book book = bookDAO.getBookById(record.getBookId());
+                if (book != null) {
+                    bookDAO.updateBookQuantity(book.getBookId(), book.getSoLuongConLai() + 1);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         response.sendRedirect("borrow");
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        int borrowId = Integer.parseInt(request.getParameter("borrowId"));
-        int readerId = Integer.parseInt(request.getParameter("readerId"));
-        int bookId = Integer.parseInt(request.getParameter("bookId"));
-        LocalDate borrowDate =  LocalDate.parse(request.getParameter("borrowDate"));
-        LocalDate dueDate = LocalDate.parse(request.getParameter("dueDate"));
-        LocalDate returnDate = LocalDate.parse(request.getParameter("returnDate"));
-        String status = request.getParameter("status");
-        double fineAmount = Double.parseDouble(request.getParameter("fineAmount"));
+        try {
+            // Lấy borrowId, nếu null hoặc rỗng thì mặc định là 0 (Tạo mới)
+            String idStr = request.getParameter("borrowId");
+            int borrowId = (idStr == null || idStr.isEmpty()) ? 0 : Integer.parseInt(idStr);
+            
+            int readerId = Integer.parseInt(request.getParameter("readerId"));
+            int bookId = Integer.parseInt(request.getParameter("bookId"));
+            LocalDate borrowDate = LocalDate.parse(request.getParameter("borrowDate"));
+            LocalDate dueDate = LocalDate.parse(request.getParameter("dueDate"));
+            
+            // Xử lý returnDate (có thể null nếu đang tạo mới)
+            String returnDateStr = request.getParameter("returnDate");
+            LocalDate returnDate = (returnDateStr != null && !returnDateStr.isEmpty()) 
+                                   ? LocalDate.parse(returnDateStr) : null;
+            
+            String status = request.getParameter("status");
+            if (status == null) status = "Đang mượn";
 
-        BorrowRecord record = new BorrowRecord(borrowId, readerId, bookId, borrowDate, dueDate, returnDate, status, fineAmount);
-        borrowDAO.borrowBook(record);
+            String fineStr = request.getParameter("fineAmount");
+            double fineAmount = (fineStr == null || fineStr.isEmpty()) ? 0 : Double.parseDouble(fineStr);
+
+            BorrowRecord record = new BorrowRecord(borrowId, readerId, bookId, borrowDate, dueDate, returnDate, status, fineAmount);
+
+            if (borrowId == 0) {
+                // --- TRƯỜNG HỢP MƯỢN SÁCH MỚI ---
+                
+                // 1. Kiểm tra sách còn không
+                Book book = bookDAO.getBookById(bookId);
+                if (book != null && book.getSoLuongConLai() > 0) {
+                    // 2. Thêm phiếu mượn (Dùng addBorrowRecord thay vì borrowBook)
+                    borrowDAO.addBorrowRecord(record);
+                    
+                    // 3. Giảm số lượng sách
+                    bookDAO.updateBookQuantity(bookId, book.getSoLuongConLai() - 1);
+                } else {
+                    // Xử lý lỗi: Hết sách (Có thể redirect kèm thông báo lỗi)
+                    System.out.println("Sách đã hết, không thể mượn!");
+                }
+            } else {
+                // --- TRƯỜNG HỢP CẬP NHẬT (SỬA) ---
+                borrowDAO.updateBorrowRecord(record);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         response.sendRedirect("borrow");
     }
 }

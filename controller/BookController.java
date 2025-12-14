@@ -2,6 +2,7 @@ package controller;
 
 import dao.BookDAO;
 import model.Book;
+import model.User; // Bắt buộc phải import User để lấy role
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
@@ -17,6 +18,14 @@ public class BookController extends HttpServlet {
         bookDAO = new BookDAO();
     }
 
+    // --- HÀM KIỂM TRA QUYỀN ADMIN ---
+    // Dùng equalsIgnoreCase để chấp nhận cả "admin", "Admin", "ADMIN"
+    private boolean isAdmin(HttpServletRequest request) {
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+        return user != null && "admin".equalsIgnoreCase(user.getRole());
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -25,15 +34,34 @@ public class BookController extends HttpServlet {
 
         switch (action) {
             case "new":
+                // CHẶN: Nếu không phải Admin thì đá về trang danh sách
+                if (!isAdmin(request)) {
+                    response.sendRedirect("books");
+                    return;
+                }
                 showForm(request, response);
                 break;
+                
             case "edit":
+                // CHẶN
+                if (!isAdmin(request)) {
+                    response.sendRedirect("books");
+                    return;
+                }
                 editForm(request, response);
                 break;
+                
             case "delete":
+                // CHẶN
+                if (!isAdmin(request)) {
+                    response.sendRedirect("books");
+                    return;
+                }
                 deleteBook(request, response);
                 break;
+                
             default:
+                // Ai cũng được xem danh sách
                 listBooks(request, response);
         }
     }
@@ -54,33 +82,64 @@ public class BookController extends HttpServlet {
 
     private void editForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        int id = Integer.parseInt(request.getParameter("bookId"));
-        Book existing = bookDAO.getBookById(id);
-        request.setAttribute("book", existing);
-        RequestDispatcher rd = request.getRequestDispatcher("/pages/book-form.jsp");
-        rd.forward(request, response);
+        try {
+            int id = Integer.parseInt(request.getParameter("bookId"));
+            Book existing = bookDAO.getBookById(id);
+            request.setAttribute("book", existing);
+            RequestDispatcher rd = request.getRequestDispatcher("/pages/book-form.jsp");
+            rd.forward(request, response);
+        } catch (NumberFormatException e) {
+            response.sendRedirect("books");
+        }
     }
 
     private void deleteBook(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        int id = Integer.parseInt(request.getParameter("bookId"));
-        bookDAO.deleteBook(id);
+        try {
+            int id = Integer.parseInt(request.getParameter("bookId"));
+            bookDAO.deleteBook(id);
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
         response.sendRedirect("books");
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        int bookId = request.getParameter("bookId") == null ? 0 : Integer.parseInt(request.getParameter("bookId"));
+        // CHẶN: Không cho gửi form nếu không phải Admin
+        if (!isAdmin(request)) {
+            response.sendRedirect("books");
+            return;
+        }
+
+        request.setCharacterEncoding("UTF-8"); 
+        
+        int bookId = 0;
+        try {
+            bookId = Integer.parseInt(request.getParameter("bookId"));
+        } catch (NumberFormatException e) {
+            bookId = 0;
+        }
+
         String maSach = request.getParameter("maSach");
         String tenSach = request.getParameter("tenSach");
         String tacGia = request.getParameter("tacGia");
         String theLoai = request.getParameter("theLoai");
         int namXB = Integer.parseInt(request.getParameter("namXB"));
         int soLuong = Integer.parseInt(request.getParameter("soLuong"));
-        int soLuongConLai = Integer.parseInt(request.getParameter("soLuongConLai"));
+        
+        // Logic xử lý số lượng còn lại
+        int soLuongConLai;
+        if (bookId == 0) {
+            // Nếu thêm mới: Còn lại = Tổng số
+            soLuongConLai = soLuong; 
+        } else {
+            // Nếu sửa: Lấy từ form
+            soLuongConLai = Integer.parseInt(request.getParameter("soLuongConLai"));
+        }
 
-        Book book = new Book( bookId, maSach, tenSach, tacGia, theLoai, namXB, soLuong, soLuongConLai);
+        Book book = new Book(bookId, maSach, tenSach, tacGia, theLoai, namXB, soLuong, soLuongConLai);
 
         if (bookId == 0) {
             bookDAO.addBook(book);

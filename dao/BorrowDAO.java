@@ -20,19 +20,7 @@ public class BorrowDAO {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                BorrowRecord record = new BorrowRecord();
-                record.setBorrowId(rs.getInt("borrowId"));
-                record.setReaderId(rs.getInt("readerId"));
-                record.setBookId(rs.getInt("bookId"));
-                
-                record.setBorrowDate(rs.getDate("borrowDate").toLocalDate());
-                record.setDueDate(rs.getDate("dueDate").toLocalDate());
-                if (rs.getDate("returnDate") != null) {
-                    record.setReturnDate(rs.getDate("returnDate").toLocalDate());
-                }
-                
-                record.setStatus(rs.getString("status"));
-                record.setFineAmount(rs.getDouble("fineAmount"));
+                BorrowRecord record = mapResultSetToRecord(rs);
                 list.add(record);
             }
         } catch (Exception e) {
@@ -41,9 +29,7 @@ public class BorrowDAO {
         return list;
     }
 
-    /**
-     * HÀM MỚI: Lấy một phiếu mượn bằng ID.
-     */
+    // Lấy một phiếu mượn bằng ID
     public BorrowRecord getBorrowRecordById(int id) {
         String sql = "SELECT * FROM BorrowRecords WHERE borrowId = ?";
         BorrowRecord record = null;
@@ -52,19 +38,7 @@ public class BorrowDAO {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    record = new BorrowRecord();
-                    record.setBorrowId(rs.getInt("borrowId"));
-                    record.setReaderId(rs.getInt("readerId"));
-                    record.setBookId(rs.getInt("bookId"));
-                    
-                    record.setBorrowDate(rs.getDate("borrowDate").toLocalDate());
-                    record.setDueDate(rs.getDate("dueDate").toLocalDate());
-                    if (rs.getDate("returnDate") != null) {
-                        record.setReturnDate(rs.getDate("returnDate").toLocalDate());
-                    }
-                    
-                    record.setStatus(rs.getString("status"));
-                    record.setFineAmount(rs.getDouble("fineAmount"));
+                    record = mapResultSetToRecord(rs);
                 }
             }
         } catch (Exception e) {
@@ -94,7 +68,7 @@ public class BorrowDAO {
         }
     }
     
-    // Cập nhật khi trả sách
+    // Cập nhật khi trả sách (hoặc cập nhật thông tin chung)
     public void updateBorrowRecord(BorrowRecord record) {
         String sql = "UPDATE BorrowRecords SET returnDate = ?, status = ?, fineAmount = ? WHERE borrowId = ?";
         try (Connection conn = DBConnect.getConnection();
@@ -115,5 +89,55 @@ public class BorrowDAO {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // Lấy danh sách phiếu mượn của một độc giả cụ thể (Dùng cho trang Chi tiết độc giả)
+    
+    public List<BorrowRecord> getBorrowRecordsByReaderId(int readerId) {
+        List<BorrowRecord> list = new ArrayList<>();
+        String sql = "SELECT * FROM BorrowRecords WHERE readerId = ? ORDER BY borrowDate DESC"; 
+
+        try (Connection conn = DBConnect.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, readerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(mapResultSetToRecord(rs));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // Cập nhật tiền phạt về 0 (Đã nộp phạt)
+    public void payFine(int borrowId) {
+        String sql = "UPDATE BorrowRecords SET fineAmount = 0 WHERE borrowId = ?";
+        try (Connection conn = DBConnect.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, borrowId);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Hàm tiện ích để map ResultSet sang Object (đỡ viết lặp lại code)
+    private BorrowRecord mapResultSetToRecord(ResultSet rs) throws Exception {
+        BorrowRecord record = new BorrowRecord();
+        record.setBorrowId(rs.getInt("borrowId"));
+        record.setReaderId(rs.getInt("readerId"));
+        record.setBookId(rs.getInt("bookId"));
+        
+        record.setBorrowDate(rs.getDate("borrowDate").toLocalDate());
+        record.setDueDate(rs.getDate("dueDate").toLocalDate());
+        if (rs.getDate("returnDate") != null) {
+            record.setReturnDate(rs.getDate("returnDate").toLocalDate());
+        }
+        
+        record.setStatus(rs.getString("status"));
+        record.setFineAmount(rs.getDouble("fineAmount"));
+        return record;
     }
 }

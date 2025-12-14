@@ -6,7 +6,7 @@
 <div class="row justify-content-center mt-4">
 	<div class="col-md-6">
 		<div class="card shadow">
-			<div class="card-header bg-success text-white">
+			<div class="card-header bg-primary text-white">
 				<h4>Tạo Phiếu Mượn Mới</h4>
 			</div>
 			<div class="card-body">
@@ -51,8 +51,15 @@
 						</div>
 					</div>
 
-					<button type="submit" class="btn btn-success w-100">Xác
-						Nhận Mượn</button>
+					<div class="d-flex justify-content-between">
+						<a href="${pageContext.request.contextPath}/borrow" class="btn btn-secondary">
+							<i class="bi bi-arrow-left"></i> Quay lại
+						</a>
+						<button type="submit" class="btn btn-primary">
+							<i class="bi bi-check-circle"></i> Xác Nhận Mượn
+						</button>
+					</div>
+					
 				</form>
 			</div>
 		</div>

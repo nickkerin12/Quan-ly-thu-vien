@@ -32,7 +32,13 @@
                 <label class="form-label">Mật khẩu</label>
                 <input type="password" name="password" class="form-control" required>
             </div>
-            <button type="submit" class="btn btn-primary w-100">Vào Hệ Thống</button>
+            
+            <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
+            
+            <div class="text-center mt-3">
+                <p class="mb-0">Chưa có tài khoản?</p>
+                <a href="${pageContext.request.contextPath}/pages/register.jsp" class="text-decoration-none fw-bold">Đăng ký ngay</a>
+            </div>
         </form>
     </div>
 </div>

@@ -43,17 +43,59 @@ Hệ thống phân chia quyền hạn rõ ràng giữa **Quản trị viên (Adm
 ## 📂 Cấu Trúc Dự Án
 
 ```text
-webapp/
-├── index.jsp                  # Trang Dashboard chính
-├── pages/                     
-│   ├── header.jsp             # Menu điều hướng (Navbar)
-│   ├── login.jsp              # Form Đăng nhập
-│   ├── register.jsp           # Form Đăng ký
-│   ├── book-list.jsp          # Danh sách sách
-│   ├── book-form.jsp          # Form Thêm/Sửa sách
-│   ├── reader-list.jsp        # Danh sách độc giả
-│   ├── reader-detail.jsp      # Chi tiết & Lịch sử mượn của độc giả
-│   ├── reader-form.jsp        # Form Thêm/Sửa độc giả
-│   ├── borrow-list.jsp        # Danh sách phiếu mượn & Nộp phạt
-│   └── borrow-form.jsp        # Form Mượn sách
-└── META-INF/ & WEB-INF/       # Cấu hình hệ thống
+LibraryManagementSystem/
+│
+├── src/main/java/                     <-- SOURCE CODE JAVA (BACKEND)
+│   │
+│   ├── controller/                    <-- Xử lý điều hướng & Logic nghiệp vụ
+│   │   ├── AuthController.java        (Đăng nhập, Đăng xuất, Đăng ký)
+│   │   ├── BookController.java        (CRUD Sách, Xem sách theo tác giả)
+│   │   ├── ReaderController.java      (CRUD Độc giả, Xem chi tiết độc giả)
+│   │   └── BorrowReturnController.java (Mượn sách, Trả sách, Nộp phạt)
+│   │
+│   ├── dao/                           <-- Giao tiếp với SQL Server
+│   │   ├── UserDAO.java               (Xử lý bảng Users)
+│   │   ├── BookDAO.java               (Xử lý bảng Books)
+│   │   ├── ReaderDAO.java             (Xử lý bảng Readers)
+│   │   └── BorrowDAO.java             (Xử lý bảng BorrowRecords)
+│   │
+│   ├── model/                         <-- Đối tượng dữ liệu (POJO)
+│   │   ├── User.java
+│   │   ├── Book.java
+│   │   ├── Reader.java
+│   │   └── BorrowRecord.java
+│   │
+│   └── util/                          <-- Tiện ích dùng chung
+│       └── DBConnect.java             (Kết nối JDBC SQL Server)
+│
+├── src/main/webapp/                   <-- GIAO DIỆN WEB (FRONTEND)
+│   │
+│   ├── index.jsp                      <-- Trang chủ (Dashboard) & Điều hướng chính
+│   │
+│   ├── pages/                         <-- Thư mục chứa các file giao diện con
+│   │   ├── header.jsp                 (Thanh menu điều hướng dùng chung)
+│   │   ├── login.jsp                  (Form Đăng nhập)
+│   │   ├── register.jsp               (Form Đăng ký)
+│   │   │
+│   │   ├── book-list.jsp              (Danh sách Sách - Phân quyền Admin/User)
+│   │   ├── book-form.jsp              (Form Thêm / Sửa Sách)
+│   │   ├── books-by-author.jsp        (Danh sách sách lọc theo Tác giả)
+│   │   │
+│   │   ├── reader-list.jsp            (Danh sách Độc giả - Phân quyền Admin/User)
+│   │   ├── reader-form.jsp            (Form Thêm / Sửa Độc giả)
+│   │   ├── reader-detail.jsp          (Xem thông tin & Lịch sử mượn của Độc giả)
+│   │   │
+│   │   ├── borrow-list.jsp            (Danh sách phiếu Mượn/Trả & Nộp phạt)
+│   │   └── borrow-form.jsp            (Form Tạo phiếu mượn mới)
+│   │
+│   ├── META-INF/
+│   │   └── MANIFEST.MF
+│   │
+│   └── WEB-INF/                       <-- Cấu hình & Thư viện
+│       ├── web.xml                    (File cấu hình Servlet - Deployment Descriptor)
+│       └── lib/                       (Nơi chứa các file .jar)
+│           ├── mssql-jdbc-12.x.x.jar  (Driver kết nối SQL Server)
+│           ├── jakarta.servlet.jsp.jstl-3.0.0.jar
+│           └── jakarta.servlet.jsp.jstl-api-3.0.0.jar
+│
+└── LibraryManagement.sql              (File Script tạo bảng SQL Server để lưu trữ)

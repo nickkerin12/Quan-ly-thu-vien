@@ -89,9 +89,7 @@ PRINT 'Đã tạo bảng thành công. Đang chèn dữ liệu mẫu...';
 -- 1. Thêm tài khoản
 INSERT INTO Users (username, password, fullName, email, role)
 VALUES
-('admin01', '123', N'Quản Trị Viên', 'admin@thuvien.com', 'Admin'),
-('admin02', '456', N'Nguyễn Văn Thủ Thư', 'thuthu01@thuvien.com', 'Admin'),
-('admin03', '789', N'Lê Thị Thủ Thư', 'thuthu02@thuvien.com', 'Admin'),
+('admin', '123', N'Quản Trị Viên', 'admin@thuvien.com', 'Admin'),
 ('docgia01', '123', N'Trần Thị Độc Giả', 'docgia01@gmail.com', 'Độc giả'),
 ('docgia02', '123', N'Nguyễn Văn An', 'nguyenvanan@gmail.com', 'Độc giả'),
 ('docgia03', '123', N'Phạm Thị Bình', 'phamthibinh@gmail.com', 'Độc giả'),

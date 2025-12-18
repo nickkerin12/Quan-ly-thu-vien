@@ -90,7 +90,8 @@ PRINT 'Đã tạo bảng thành công. Đang chèn dữ liệu mẫu...';
 INSERT INTO Users (username, password, fullName, email, role)
 VALUES
 ('admin', '123', N'Quản Trị Viên', 'admin@thuvien.com', 'Admin'),
-('docgia01', '123', N'Trần Thị Độc Giả', 'docgia01@gmail.com', 'Độc giả'),
+('thuthu', '123', N'Lê Thủ Thư', 'thuthu@thuvien.com', 'Thủ thư'),
+('docgia01', '123', N'Trần Thị Ngọc Anh', 'docgia01@gmail.com', 'Độc giả'),
 ('docgia02', '123', N'Nguyễn Văn An', 'nguyenvanan@gmail.com', 'Độc giả'),
 ('docgia03', '123', N'Phạm Thị Bình', 'phamthibinh@gmail.com', 'Độc giả'),
 ('docgia04', '123', N'Lê Minh Cường', 'leminhcuong@gmail.com', 'Độc giả'),
@@ -103,7 +104,7 @@ VALUES
 -- 2. Thêm thông tin độc giả (liên kết với tài khoản 'docgia01' có userId = 3)
 INSERT INTO Readers (maDocGia, hoTen, diaChi, soDienThoai, userId)
 VALUES
-('DG001', N'Trần Thị Độc Giả', N'123 Đường ABC, Quận 1, TP. HCM', '0909123456', 3),
+('DG001', N'Trần Thị Ngọc Anh', N'123 Đường ABC, Quận 1, TP. HCM', '0909123456', 3),
 ('DG002', N'Nguyễn Văn An', N'45 Lê Lợi, Quận 3, TP. HCM', '0912345678', 5),
 ('DG003', N'Phạm Thị Bình', N'78 Hai Bà Trưng, Quận 1, TP. HCM', '0987654321', 6),
 ('DG004', N'Lê Minh Cường', N'12 Nguyễn Huệ, Quận 5, TP. HCM', '0933123456', 7),

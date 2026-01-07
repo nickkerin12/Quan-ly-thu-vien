@@ -53,9 +53,9 @@ public class ReaderController extends HttpServlet {
 		case "delete":
 			deleteReader(request, response);
 			break;
-//		case "view":
-//			viewReaderDetail(request, response);
-//			break;
+		case "view":
+			viewReaderDetail(request, response);
+			break;
 		default:
 			listReaders(request, response);
 		}
@@ -119,19 +119,19 @@ public class ReaderController extends HttpServlet {
 		response.sendRedirect("readers");
 	}
 
-//	private void viewReaderDetail(HttpServletRequest request, HttpServletResponse response)
-//			throws ServletException, IOException {
-//		try {
-//			int id = Integer.parseInt(request.getParameter("id"));
-//			Reader reader = readerDAO.getReaderById(id);
-//			List<BorrowRecord> history = borrowDAO.getBorrowRecordById(id);
-//			request.setAttribute("reader", reader);
-//			request.setAttribute("history", history);
-//			RequestDispatcher rd = request.getRequestDispatcher("/pages/reader-detail.jsp");
-//			rd.forward(request, response);
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//			response.sendRedirect("readers");
-//		}
-//	}
+	private void viewReaderDetail(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		try {
+			int id = Integer.parseInt(request.getParameter("id"));
+			Reader reader = readerDAO.getReaderById(id);
+			List<BorrowRecord> history = borrowDAO.getBorrowRecordsByReaderId(id);
+			request.setAttribute("reader", reader);
+			request.setAttribute("history", history);
+			RequestDispatcher rd = request.getRequestDispatcher("/pages/reader-detail.jsp");
+			rd.forward(request, response);
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.sendRedirect("readers");
+		}
+	}
 }

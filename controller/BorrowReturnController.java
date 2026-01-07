@@ -6,12 +6,14 @@ import dao.ReaderDAO;
 import model.BorrowRecord;
 import model.Book;
 import model.Reader;
+import model.User;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.ArrayList;
 
 @WebServlet("/borrow")
 public class BorrowReturnController extends HttpServlet {
@@ -44,102 +46,129 @@ public class BorrowReturnController extends HttpServlet {
         }
     }
 
+    // --- 1. LOGIC HIỂN THỊ DANH SÁCH ---
+    // Admin thấy hết - Độc giả chỉ thấy của mình
     private void listRecords(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        List<BorrowRecord> list = borrowDAO.getAllBorrowRecords();
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+        List<BorrowRecord> list = new ArrayList<>();
+
+        if (user != null) {
+            String role = user.getRole();
+            // Nếu là Admin hoặc Thủ thư: Lấy tất cả
+            if ("Admin".equalsIgnoreCase(role) || "Thủ thư".equalsIgnoreCase(role)) {
+                list = borrowDAO.getAllBorrowRecords();
+            } 
+            // Nếu là Độc giả: Chỉ lấy của chính mình
+            else {
+                Reader reader = readerDAO.getReaderByUserId(user.getUserId());
+                if (reader != null) {
+                    list = borrowDAO.getBorrowRecordsByReaderId(reader.getReaderId());
+                }
+            }
+        }
         request.setAttribute("borrowList", list);
         RequestDispatcher rd = request.getRequestDispatcher("/pages/borrow-list.jsp");
         rd.forward(request, response);
     }
 
+    // --- 2. LOGIC HIỂN THỊ FORM MƯỢN ---
+    // Admin có danh sách chọn người - Độc giả chỉ hiện tên mình
     private void showForm(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Lấy danh sách sách và độc giả để hiển thị trong dropdown (select option)
+        
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+        
+        // Luôn lấy danh sách sách để chọn
         List<Book> books = bookDAO.getAllBooks();
-        List<Reader> readers = readerDAO.getAllReaders();
         request.setAttribute("books", books);
-        request.setAttribute("readers", readers);
+
+        if (user != null) {
+            String role = user.getRole();
+            if ("Admin".equalsIgnoreCase(role) || "Thủ thư".equalsIgnoreCase(role)) {
+                // Admin: Lấy list tất cả độc giả để chọn
+                List<Reader> readers = readerDAO.getAllReaders();
+                request.setAttribute("readers", readers);
+            } else {
+                // Độc giả: Lấy thông tin của chính họ
+                Reader myReader = readerDAO.getReaderByUserId(user.getUserId());
+                request.setAttribute("myReader", myReader);
+            }
+        }
+
         RequestDispatcher rd = request.getRequestDispatcher("/pages/borrow-form.jsp");
         rd.forward(request, response);
     }
 
-    // Logic trả sách (Action: return)
-    private void returnBook(HttpServletRequest request, HttpServletResponse response)
+    // --- 3. LOGIC LƯU PHIẾU MƯỢN ---
+    // Tự động gán ID độc giả nếu là người dùng thường
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
         try {
-            int recordId = Integer.parseInt(request.getParameter("id"));
-            BorrowRecord record = borrowDAO.getBorrowRecordById(recordId);
+            HttpSession session = request.getSession();
+            User user = (User) session.getAttribute("user");
             
-            if (record != null && !"Đã trả".equals(record.getStatus())) {
-                // 1. Cập nhật thông tin trả
-                record.setReturnDate(LocalDate.now());
-                record.setStatus("Đã trả");
-                // Có thể tính phạt ở đây nếu muốn
-                
-                // 2. Gọi DAO cập nhật phiếu mượn (Dùng updateBorrowRecord thay vì returnBook)
-                borrowDAO.updateBorrowRecord(record);
-
-                // 3. Tăng số lượng sách còn lại lên 1
-                Book book = bookDAO.getBookById(record.getBookId());
-                if (book != null) {
-                    bookDAO.updateBookQuantity(book.getBookId(), book.getSoLuongConLai() + 1);
-                }
+            String idStr = request.getParameter("borrowId");
+            int borrowId = (idStr == null || idStr.isEmpty()) ? 0 : Integer.parseInt(idStr);
+            int bookId = Integer.parseInt(request.getParameter("bookId"));
+            LocalDate borrowDate = LocalDate.parse(request.getParameter("borrowDate"));
+            LocalDate dueDate = LocalDate.parse(request.getParameter("dueDate"));
+            
+            // XỬ LÝ READER ID
+            int readerId = 0;
+            String role = user.getRole();
+            
+            if ("Admin".equalsIgnoreCase(role) || "Thủ thư".equalsIgnoreCase(role)) {
+                // Admin: Lấy ID từ form (do Admin chọn)
+                readerId = Integer.parseInt(request.getParameter("readerId"));
+            } else {
+                // Độc giả: TỰ ĐỘNG lấy ID của chính mình (Chống hack)
+                Reader myReader = readerDAO.getReaderByUserId(user.getUserId());
+                if (myReader != null) readerId = myReader.getReaderId();
             }
+
+            String status = "Đang mượn"; 
+            BorrowRecord record = new BorrowRecord(borrowId, readerId, bookId, borrowDate, dueDate, null, status, 0);
+
+            if (borrowId == 0) {
+                // Mượn mới
+                Book book = bookDAO.getBookById(bookId);
+                if (book != null && book.getSoLuongConLai() > 0) {
+                    borrowDAO.addBorrowRecord(record);
+                    bookDAO.updateBookQuantity(bookId, book.getSoLuongConLai() - 1);
+                }
+            } else {
+                // Cập nhật (Chỉ Admin mới thường dùng cái này để sửa lỗi)
+                borrowDAO.updateBorrowRecord(record);
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
         response.sendRedirect("borrow");
     }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        try {
-            // Lấy borrowId, nếu null hoặc rỗng thì mặc định là 0 (Tạo mới)
-            String idStr = request.getParameter("borrowId");
-            int borrowId = (idStr == null || idStr.isEmpty()) ? 0 : Integer.parseInt(idStr);
+    // --- 4. LOGIC TRẢ SÁCH ---
+    private void returnBook(HttpServletRequest request, HttpServletResponse response) throws IOException {
+         try {
+            int recordId = Integer.parseInt(request.getParameter("id"));
+            BorrowRecord record = borrowDAO.getBorrowRecordById(recordId);
             
-            int readerId = Integer.parseInt(request.getParameter("readerId"));
-            int bookId = Integer.parseInt(request.getParameter("bookId"));
-            LocalDate borrowDate = LocalDate.parse(request.getParameter("borrowDate"));
-            LocalDate dueDate = LocalDate.parse(request.getParameter("dueDate"));
-            
-            // Xử lý returnDate (có thể null nếu đang tạo mới)
-            String returnDateStr = request.getParameter("returnDate");
-            LocalDate returnDate = (returnDateStr != null && !returnDateStr.isEmpty()) 
-                                   ? LocalDate.parse(returnDateStr) : null;
-            
-            String status = request.getParameter("status");
-            if (status == null) status = "Đang mượn";
-
-            String fineStr = request.getParameter("fineAmount");
-            double fineAmount = (fineStr == null || fineStr.isEmpty()) ? 0 : Double.parseDouble(fineStr);
-
-            BorrowRecord record = new BorrowRecord(borrowId, readerId, bookId, borrowDate, dueDate, returnDate, status, fineAmount);
-
-            if (borrowId == 0) {
-                // --- TRƯỜNG HỢP MƯỢN SÁCH MỚI ---
+            if (record != null && !"Đã trả".equals(record.getStatus())) {
+                record.setReturnDate(LocalDate.now());
+                record.setStatus("Đã trả");
                 
-                // 1. Kiểm tra sách còn không
-                Book book = bookDAO.getBookById(bookId);
-                if (book != null && book.getSoLuongConLai() > 0) {
-                    // 2. Thêm phiếu mượn (Dùng addBorrowRecord thay vì borrowBook)
-                    borrowDAO.addBorrowRecord(record);
-                    
-                    // 3. Giảm số lượng sách
-                    bookDAO.updateBookQuantity(bookId, book.getSoLuongConLai() - 1);
-                } else {
-                    // Xử lý lỗi: Hết sách (Có thể redirect kèm thông báo lỗi)
-                    System.out.println("Sách đã hết, không thể mượn!");
-                }
-            } else {
-                // --- TRƯỜNG HỢP CẬP NHẬT (SỬA) ---
                 borrowDAO.updateBorrowRecord(record);
+                
+                Book book = bookDAO.getBookById(record.getBookId());
+                if (book != null) {
+                    bookDAO.updateBookQuantity(book.getBookId(), book.getSoLuongConLai() + 1);
+                }
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
         response.sendRedirect("borrow");
     }
 }

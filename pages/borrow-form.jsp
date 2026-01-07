@@ -1,76 +1,79 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8"%>
+<%@ taglib uri="jakarta.tags.core" prefix="c"%>
 <%@ include file="header.jsp"%>
-<%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<%@ page import="java.time.LocalDate"%>
 
-<div class="row justify-content-center mt-4">
-	<div class="col-md-6">
-		<div class="card shadow">
-			<div class="card-header bg-primary text-white">
-				<h4>Tạo Phiếu Mượn Mới</h4>
-			</div>
-			<div class="card-body">
-				<form action="${pageContext.request.contextPath}/borrow"
-					method="post">
-					<input type="hidden" name="borrowId" value="0"> <input
-						type="hidden" name="status" value="Đang mượn"> <input
-						type="hidden" name="fineAmount" value="0.0">
+<div class="container mt-4">
+	<div class="card shadow p-4" style="max-width: 600px; margin: auto;">
+		<h3 class="text-center text-primary mb-4">Phiếu Mượn Sách</h3>
 
-					<div class="mb-3">
-						<label class="form-label">Chọn Độc Giả:</label> <select
-							name="readerId" class="form-select" required>
-							<option value="" disabled selected>-- Chọn độc giả --</option>
+		<form action="${pageContext.request.contextPath}/borrow" method="post">
+			<input type="hidden" name="borrowId"
+				value="${record.borrowId != null ? record.borrowId : 0}" />
+
+			<div class="mb-3">
+				<label class="form-label fw-bold">Người Mượn:</label>
+
+				<c:choose>
+					<%-- TRƯỜNG HỢP 1: ADMIN HOẶC THỦ THƯ -> Hiện danh sách thả xuống (Dropdown) --%>
+					<c:when
+						test="${sessionScope.user.role == 'Admin' || sessionScope.user.role == 'Thủ thư'}">
+						<select name="readerId" class="form-select" required>
+							<option value="">-- Chọn Độc Giả --</option>
 							<c:forEach var="r" items="${readers}">
-								<option value="${r.readerId}">${r.hoTen}(Mã:
-									${r.maDocGia})</option>
+								<option value="${r.readerId}"
+									${r.readerId == record.readerId ? 'selected' : ''}>
+									${r.maDocGia} - ${r.hoTen}</option>
 							</c:forEach>
 						</select>
-					</div>
+					</c:when>
 
-					<div class="mb-3">
-						<label class="form-label">Chọn Sách:</label> <select name="bookId"
-							class="form-select" required>
-							<option value="" disabled selected>-- Chọn sách --</option>
-							<c:forEach var="b" items="${books}">
-								<option value="${b.bookId}"
-									${b.soLuongConLai <= 0 ? 'disabled' : ''}>
-									${b.tenSach} - (Còn: ${b.soLuongConLai}) ${b.soLuongConLai <= 0 ? '[HẾT]' : ''}
-								</option>
-							</c:forEach>
-						</select>
-					</div>
+					<%-- TRƯỜNG HỢP 2: ĐỘC GIẢ -> Hiện tên dạng Text (Không cho chọn người khác) --%>
+					<c:otherwise>
+						<input type="text" class="form-control"
+							value="${myReader.hoTen} (${myReader.maDocGia})" disabled
+							readonly />
 
-					<div class="row">
-						<div class="col-md-6 mb-3">
-							<label>Ngày Mượn</label> <input type="date" name="borrowDate"
-								id="dateToday" class="form-control" required>
-						</div>
-						<div class="col-md-6 mb-3">
-							<label>Ngày Hẹn Trả</label> <input type="date" name="dueDate"
-								class="form-control" required>
-						</div>
-					</div>
-
-					<div class="d-flex justify-content-between">
-						<a href="${pageContext.request.contextPath}/borrow" class="btn btn-secondary">
-							<i class="bi bi-arrow-left"></i> Quay lại
-						</a>
-						<button type="submit" class="btn btn-primary">
-							<i class="bi bi-check-circle"></i> Xác Nhận Mượn
-						</button>
-					</div>
-					
-				</form>
+						<input type="hidden" name="readerId" value="${myReader.readerId}" />
+					</c:otherwise>
+				</c:choose>
 			</div>
-		</div>
+
+			<div class="mb-3">
+				<label class="form-label fw-bold">Chọn Sách:</label> <select
+					name="bookId" class="form-select" required>
+					<option value="">-- Chọn Sách --</option>
+					<c:forEach var="b" items="${books}">
+						<c:if test="${b.soLuongConLai > 0 || b.bookId == record.bookId}">
+							<option value="${b.bookId}"
+								${b.bookId == record.bookId ? 'selected' : ''}>
+								${b.tenSach} (Còn: ${b.soLuongConLai})</option>
+						</c:if>
+					</c:forEach>
+				</select>
+			</div>
+
+			<div class="row">
+				<div class="col-md-6 mb-3">
+					<label class="form-label">Ngày Mượn</label> <input type="date"
+						name="borrowDate" class="form-control" required
+						value="${record.borrowDate == null ? LocalDate.now() : record.borrowDate}">
+				</div>
+				<div class="col-md-6 mb-3">
+					<label class="form-label">Hẹn Trả</label> <input type="date"
+						name="dueDate" class="form-control" required
+						value="${record.dueDate}">
+				</div>
+			</div>
+
+			<div class="d-flex justify-content-between mt-3">
+				<a href="${pageContext.request.contextPath}/borrow"
+					class="btn btn-secondary">Quay lại</a>
+				<button type="submit" class="btn btn-primary">Xác Nhận Mượn</button>
+			</div>
+		</form>
 	</div>
-</div>
-
-<script>
-	// JS thuần để set ngày hôm nay vào input
-	document.getElementById('dateToday').valueAsDate = new Date();
-</script>
-
 </div>
 </body>
 </html>

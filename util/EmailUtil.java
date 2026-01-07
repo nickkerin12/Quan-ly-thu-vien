@@ -8,7 +8,6 @@ import javax.mail.internet.*;
 public class EmailUtil {
     
     // CẤU HÌNH EMAIL GỬI ĐI (Sử dụng Gmail)
-    // Bạn cần bật xác thực 2 bước và tạo "Mật khẩu ứng dụng" (App Password) trong cài đặt Google Account
     private static final String HOST_NAME = "smtp.gmail.com";
     private static final int TSL_PORT = 587;
     private static final String APP_EMAIL = "doAnWeb23130235@gmail.com"; 

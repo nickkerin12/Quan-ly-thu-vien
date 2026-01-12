@@ -1,100 +1,87 @@
-<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Quản lý Mượn Trả</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="bg-light">
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+	pageEncoding="UTF-8"%>
+<%@ taglib uri="jakarta.tags.core" prefix="c"%>
+<%@ include file="header.jsp"%>
 
-    <jsp:include page="../header.jsp" />
+<div class="container mt-4">
+	<div class="d-flex justify-content-between align-items-center mb-3">
+		<h2 class="text-primary">Quản Lý Mượn / Trả Sách</h2>
 
-    <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="text-primary fw-bold"><i class="fas fa-list-alt"></i> Danh sách Phiếu mượn</h2>
-            <a href="${pageContext.request.contextPath}/borrow?action=new" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Tạo Phiếu Mượn
-            </a>
-        </div>
+		<a href="${pageContext.request.contextPath}/borrow?action=new"
+			class="btn btn-primary"> + Tạo Phiếu Mượn </a>
+	</div>
 
-        <div class="card shadow">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover table-bordered align-middle">
-                        <thead class="table-dark text-center">
-                            <tr>
-                                <th>Mã phiếu</th>
-                                <th>Độc giả (ID)</th>
-                                <th>Sách (ID)</th>
-                                <th>Ngày mượn</th>
-                                <th>Hạn trả</th>
-                                <th>Ngày trả</th>
-                                <th>Trạng thái</th>
-                                <th>Phạt</th>
-                                <th>Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <c:if test="${empty borrowList}">
-                                <tr>
-                                    <td colspan="9" class="text-center text-muted py-4">Chưa có dữ liệu mượn trả.</td>
-                                </tr>
-                            </c:if>
+	<div class="card shadow-sm">
+		<div class="card-body">
+			<table class="table table-bordered table-hover align-middle">
+				<thead class="table-dark">
+					<tr>
+						<th>Mã Phiếu</th>
+						<th>Mã Độc Giả</th>
+						<th>Mã Sách</th>
+						<th>Ngày Mượn</th>
+						<th>Hẹn Trả</th>
+						<th>Ngày Trả</th>
+						<th>Trạng Thái</th>
+						<th>Tiền Phạt</th>
 
-                            <c:forEach var="br" items="${borrowList}">
-                                <tr>
-                                    <td class="text-center fw-bold">#${br.borrowId}</td>
-                                    <td class="text-center">${br.readerId}</td>
-                                    <td class="text-center">${br.bookId}</td>
-                                    <td class="text-center">${br.borrowDate}</td>
-                                    <td class="text-center text-danger">${br.dueDate}</td>
-                                    <td class="text-center">
-                                        <c:choose>
-                                            <c:when test="${br.returnDate != null}">${br.returnDate}</c:when>
-                                            <c:otherwise><span class="badge bg-secondary">Chưa trả</span></c:otherwise>
-                                        </c:choose>
-                                    </td>
-                                    <td class="text-center">
-                                        <c:choose>
-                                            <c:when test="${br.status == 'Đã trả'}"><span class="badge bg-success">Đã trả</span></c:when>
-                                            <c:when test="${br.status == 'Quá hạn'}"><span class="badge bg-danger">Quá hạn</span></c:when>
-                                            <c:otherwise><span class="badge bg-warning text-dark">${br.status}</span></c:otherwise>
-                                        </c:choose>
-                                    </td>
-                                    <td class="text-center text-danger fw-bold">
-                                        <c:if test="${br.fineAmount > 0}">
-                                            <fmt:formatNumber value="${br.fineAmount}" type="currency" currencySymbol="đ"/>
-                                        </c:if>
-                                    </td>
-                                    <td class="text-center">
-                                        <c:if test="${br.status != 'Đã trả'}">
-                                            <a href="${pageContext.request.contextPath}/borrow?action=return&id=${br.borrowId}" 
-                                               class="btn btn-primary btn-sm"
-                                               onclick="return confirm('Xác nhận trả sách cho phiếu #${br.borrowId}?');">
-                                               <i class="fas fa-undo"></i> Trả sách
-                                            </a>
-                                        </c:if>
-                                        <c:if test="${br.status == 'Đã trả'}">
-                                            <button class="btn btn-secondary btn-sm" disabled><i class="fas fa-check"></i> Hoàn tất</button>
-                                        </c:if>
-                                    </td>
-                                </tr>
-                            </c:forEach>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        
-        <div class="mt-3 text-end">
-             <a href="${pageContext.request.contextPath}/index.jsp" class="text-decoration-none">← Quay về Trang chủ</a>
-        </div>
-    </div>
+						<c:if
+							test="${sessionScope.user.role == 'Admin' || sessionScope.user.role == 'Thủ thư'}">
+							<th class="text-center">Hành Động</th>
+						</c:if>
+					</tr>
+				</thead>
+				<tbody>
+					<c:forEach var="br" items="${borrowList}">
+						<tr>
+							<td>#${br.borrowId}</td>
+							<td>${br.readerId}</td>
+							<td>${br.bookId}</td>
+							<td>${br.borrowDate}</td>
+							<td>${br.dueDate}</td>
+							<td>${br.returnDate == null ? '-' : br.returnDate}</td>
+							<td><c:choose>
+									<c:when test="${br.status == 'Đang mượn'}">
+										<span class="badge bg-warning text-dark">${br.status}</span>
+									</c:when>
+									<c:when test="${br.status == 'Đã trả'}">
+										<span class="badge bg-success">${br.status}</span>
+									</c:when>
+									<c:when test="${br.status == 'Quá hạn'}">
+										<span class="badge bg-danger">${br.status}</span>
+									</c:when>
+									<c:otherwise>
+										<span class="badge bg-secondary">${br.status}</span>
+									</c:otherwise>
+								</c:choose></td>
+							<td
+								class="fw-bold ${br.fineAmount > 0 ? 'text-danger' : 'text-success'}">
+								${br.fineAmount} đ</td>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+							<c:if
+								test="${sessionScope.user.role == 'Admin' || sessionScope.user.role == 'Thủ thư'}">
+								<td class="text-center"><c:if
+										test="${br.status != 'Đã trả'}">
+										<a href="borrow?action=return&id=${br.borrowId}"
+											class="btn btn-success btn-sm"
+											onclick="return confirm('Xác nhận trả sách cho phiếu #${br.borrowId}?')">
+											Trả sách </a>
+									</c:if> <c:if test="${br.status == 'Đã trả'}">
+										<span class="text-success">&#10004; Xong</span>
+									</c:if></td>
+							</c:if>
+						</tr>
+					</c:forEach>
+
+					<c:if test="${empty borrowList}">
+						<tr>
+							<td colspan="9" class="text-center text-muted py-3">Bạn chưa có lịch sử mượn sách nào.</td>
+						</tr>
+					</c:if>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
 </body>
 </html>

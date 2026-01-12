@@ -56,7 +56,7 @@ body {
 				<button type="submit" class="btn btn-primary w-100">Gửi Mật Khẩu Mới</button>
 
 				<div class="text-center mt-3">
-					<a href="${pageContext.request.contextPath}/pages/login.jsp" class="text-decoration-none">Quay lại Đăng nhập</a>
+					<a href="${pageContext.request.contextPath}/auth" class="text-decoration-none">Quay lại Đăng nhập</a>
 				</div>
 			</form>
 		</div>

@@ -15,8 +15,8 @@
 	<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
 		<div class="container">
 			<a class="navbar-brand"
-				href="${pageContext.request.contextPath}/index.jsp">LIBRARY
-				SYSTEM</a>
+				href="${pageContext.request.contextPath}/pages/index.jsp">LIBRARY SYSTEM
+			</a>
 
 			<div class="collapse navbar-collapse">
 				<ul class="navbar-nav me-auto">
@@ -45,8 +45,11 @@
 
 					<c:if test="${empty sessionScope.user}">
 						<li class="nav-item"><a class="nav-link"
-							href="${pageContext.request.contextPath}/pages/login.jsp">Đăng
+							href="${pageContext.request.contextPath}/auth">Đăng
 								Nhập</a></li>
+						<li class="nav-item"><a class="nav-link"
+							href="${pageContext.request.contextPath}/pages/register.jsp">Đăng
+								Ký</a></li>
 					</c:if>
 				</ul>
 			</div>

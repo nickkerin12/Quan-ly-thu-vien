@@ -1,76 +1,59 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
-<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib uri="jakarta.tags.core" prefix="c"%>
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Đăng ký tài khoản</title>
+    <title>Đăng Ký Tài Khoản</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f0f2f5; }
-        .card-register { border: none; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        .form-control { border-radius: 8px; padding: 10px 15px; }
-        .btn-register { border-radius: 8px; padding: 10px; font-weight: bold; font-size: 16px; }
-        .register-header { background: transparent; border-bottom: none; padding-top: 20px; }
+        body { background: #f0f2f5; display: flex; align-items: center; justify-content: center; height: 100vh; }
+        .card-register { width: 100%; max-width: 500px; }
     </style>
 </head>
 <body>
 
-    <jsp:include page="../header.jsp" />
-
-    <div class="container">
-        <div class="row justify-content-center align-items-center min-vh-100">
-            <div class="col-md-5">
-                <div class="card card-register bg-white my-5">
-                    <div class="card-header register-header text-center">
-                        <h3 class="fw-bold text-primary">Tạo Tài Khoản</h3>
-                        <p class="text-muted small">Nhập thông tin để đăng ký thành viên mới</p>
-                    </div>
-
-                    <div class="card-body p-4">
-                        <c:if test="${not empty error}">
-                            <div class="alert alert-danger text-center p-2"><small>${error}</small></div>
-                        </c:if>
-
-                        <form action="${pageContext.request.contextPath}/auth" method="post">
-                            <input type="hidden" name="action" value="register">
-                            
-                            <div class="mb-3">
-                                <label class="form-label fw-bold small text-secondary">Họ và tên</label>
-                                <input type="text" name="fullName" class="form-control" placeholder="Nguyễn Văn A" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold small text-secondary">Email</label>
-                                <input type="email" name="email" class="form-control" placeholder="name@example.com" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold small text-secondary">Tên đăng nhập</label>
-                                <input type="text" name="username" class="form-control" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold small text-secondary">Mật khẩu</label>
-                                <input type="password" name="password" class="form-control" required>
-                            </div>
-
-                            <div class="d-grid mt-4">
-                                <button type="submit" class="btn btn-primary btn-register">Đăng Ký Ngay</button>
-                            </div>
-                        </form>
-
-                        <hr class="my-4 text-secondary">
-                        <div class="text-center">
-                            <span class="text-muted">Đã có tài khoản?</span>
-                            <a href="${pageContext.request.contextPath}/auth?action=login" class="text-decoration-none fw-bold ms-1">Đăng nhập</a>
-                        </div>
-                    </div>
-                </div>
+    
+<div class="card card-register shadow border-0">
+    <div class="card-body p-4">
+        <h3 class="text-center text-primary mb-4">ĐĂNG KÝ TÀI KHOẢN</h3>
+        <c:if test="${not empty error}">
+				<div class="alert alert-danger text-center" role="alert">
+					${error}</div>
+		</c:if>
+		
+		<c:if test="${not empty mesage}">
+				<div class="alert alert-success text-center" role="alert">
+					${message}</div>
+		</c:if>
+        <form action="${pageContext.request.contextPath}/auth?action=register" method="post">
+            <div class="mb-3">
+                <label class="form-label">Họ và Tên</label>
+                <input type="text" name="fullName" class="form-control" required>
             </div>
-        </div>
-    </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Tên đăng nhập</label>
+                <input type="text" name="username" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Mật khẩu</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            
+            <input type="hidden" name="role" value="Độc giả">
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+            <button type="submit" class="btn btn-primary w-100">Đăng Ký</button>
+            
+            <div class="text-center mt-3">           
+                <p class="mb-0">Đã có tài khoản?</p>
+                <a href="${pageContext.request.contextPath}/auth" class="text-decoration-none fw-bold">Đăng nhập ngay</a>
+            </div>
+        </form>
+    </div>
+</div>
+
 </body>
 </html>

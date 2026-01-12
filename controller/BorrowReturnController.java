@@ -154,15 +154,16 @@ public class BorrowReturnController extends HttpServlet {
     // --- 4. LOGIC TRẢ SÁCH ---
     private void returnBook(HttpServletRequest request, HttpServletResponse response) throws IOException {
          try {
+        	
             int recordId = Integer.parseInt(request.getParameter("id"));
             BorrowRecord record = borrowDAO.getBorrowRecordById(recordId);
-            
+            //Cập nhật trạng thái sau khi trả
             if (record != null && !"Đã trả".equals(record.getStatus())) {
                 record.setReturnDate(LocalDate.now());
                 record.setStatus("Đã trả");
                 
                 borrowDAO.updateBorrowRecord(record);
-                
+                //Cập nhật số lượng sách sau khi trả
                 Book book = bookDAO.getBookById(record.getBookId());
                 if (book != null) {
                     bookDAO.updateBookQuantity(book.getBookId(), book.getSoLuongConLai() + 1);

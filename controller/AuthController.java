@@ -29,7 +29,7 @@ public class AuthController extends HttpServlet {
 		if ("logout".equals(action)) {
 			HttpSession session = request.getSession();
 			session.invalidate();
-			response.sendRedirect(request.getContextPath() + "/pages/login.jsp");
+			response.sendRedirect(request.getContextPath() + "/home");
 		} else {
 			RequestDispatcher rd = request.getRequestDispatcher("/pages/login.jsp");
 			rd.forward(request, response);
@@ -105,7 +105,7 @@ public class AuthController extends HttpServlet {
 			response.sendRedirect(request.getContextPath() + "/pages/error.jsp");
 		}
 	}
-
+	
 	// --- HÀM QUÊN MẬT KHẨU (CODE CŨ GIỮ NGUYÊN) ---
 	private void handleForgotPassword(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
@@ -142,7 +142,7 @@ public class AuthController extends HttpServlet {
 		if (user != null) {
 			HttpSession session = request.getSession();
 			session.setAttribute("user", user);
-			response.sendRedirect(request.getContextPath() + "/index.jsp");
+			response.sendRedirect(request.getContextPath() + "/pages/index.jsp");
 		} else {
 			request.setAttribute("error", "Sai thông tin đăng nhập!");
 			request.getRequestDispatcher("/pages/login.jsp").forward(request, response);

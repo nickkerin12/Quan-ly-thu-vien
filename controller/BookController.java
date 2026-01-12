@@ -18,52 +18,14 @@ public class BookController extends HttpServlet {
         bookDAO = new BookDAO();
     }
 
-    // --- HÀM KIỂM TRA QUYỀN ADMIN ---
-    // Dùng equalsIgnoreCase để chấp nhận cả "admin", "Admin", "ADMIN"
-    private boolean isAdmin(HttpServletRequest request) {
-        HttpSession session = request.getSession();
-        User user = (User) session.getAttribute("user");
-        return user != null && "admin".equalsIgnoreCase(user.getRole());
-    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         String action = request.getParameter("action");
         if (action == null) action = "list";
-
-        switch (action) {
-            case "new":
-                // CHẶN: Nếu không phải Admin thì đá về trang danh sách
-                if (!isAdmin(request)) {
-                    response.sendRedirect("books");
-                    return;
-                }
-                showForm(request, response);
-                break;
-                
-            case "edit":
-                // CHẶN
-                if (!isAdmin(request)) {
-                    response.sendRedirect("books");
-                    return;
-                }
-                editForm(request, response);
-                break;
-                
-            case "delete":
-                // CHẶN
-                if (!isAdmin(request)) {
-                    response.sendRedirect("books");
-                    return;
-                }
-                deleteBook(request, response);
-                break;
-                
-            default:
-                // Ai cũng được xem danh sách
-                listBooks(request, response);
-        }
+            // Ai cũng được xem danh sách
+            listBooks(request, response);
     }
   
     private void listBooks(HttpServletRequest request, HttpServletResponse response)
@@ -107,11 +69,6 @@ public class BookController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        // CHẶN: Không cho gửi form nếu không phải Admin
-        if (!isAdmin(request)) {
-            response.sendRedirect("books");
-            return;
-        }
 
         request.setCharacterEncoding("UTF-8"); 
         

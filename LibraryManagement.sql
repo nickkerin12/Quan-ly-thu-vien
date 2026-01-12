@@ -1,153 +1,134 @@
-﻿-- 1. TẠO CƠ SỞ DỮ LIỆU
-IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = 'LibraryManagement')
-BEGIN
-    CREATE DATABASE LibraryManagement;
-END
+﻿USE LibraryManagement; -- Đảm bảo đang chọn đúng Database
 GO
 
--- 2. SỬ DỤNG CƠ SỞ DỮ LIỆU VỪA TẠO
+-- =============================================
+-- PHẦN 1: XÓA BẢNG CŨ (Theo thứ tự Con -> Cha)
+-- =============================================
+IF OBJECT_ID('dbo.BorrowRecords', 'U') IS NOT NULL DROP TABLE dbo.BorrowRecords;
+IF OBJECT_ID('dbo.Readers', 'U') IS NOT NULL DROP TABLE dbo.Readers;
+IF OBJECT_ID('dbo.Books', 'U') IS NOT NULL DROP TABLE dbo.Books;
+IF OBJECT_ID('dbo.Users', 'U') IS NOT NULL DROP TABLE dbo.Users;
+GO
+
+-- =============================================
+-- PHẦN 2: TẠO BẢNG MỚI (Cấu trúc chuẩn)
+-- =============================================
+
+-- 1. Bảng Users (Tài khoản đăng nhập)
+CREATE TABLE Users (
+    userId INT IDENTITY(1,1) PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL, -- Tên đăng nhập không dấu
+    password VARCHAR(255) NOT NULL,
+    fullName NVARCHAR(100) NOT NULL,      -- Tên hiển thị có dấu
+    email VARCHAR(100) NOT NULL,
+    -- Quan trọng: role là NVARCHAR để lưu 'Độc giả', 'Thủ thư'
+    role NVARCHAR(50) NOT NULL CHECK (role IN ('Admin', N'Thủ thư', N'Độc giả'))
+);
+
+-- 2. Bảng Books (Sách)
+CREATE TABLE Books (
+    bookId INT IDENTITY(1,1) PRIMARY KEY, -- Tự động tăng ID
+    maSach VARCHAR(20) UNIQUE NOT NULL,   -- Mã sách phải duy nhất
+    tenSach NVARCHAR(255) NOT NULL,
+    tacGia NVARCHAR(100),
+    theLoai NVARCHAR(100),
+    namXB INT,
+    soLuong INT DEFAULT 0,
+    soLuongConLai INT DEFAULT 0 CHECK (soLuongConLai >= 0)
+);
+
+-- 3. Bảng Readers (Hồ sơ độc giả)
+CREATE TABLE Readers (
+    readerId INT IDENTITY(1,1) PRIMARY KEY, -- Tự động tăng ID
+    maDocGia VARCHAR(20) UNIQUE NOT NULL,
+    hoTen NVARCHAR(100) NOT NULL,
+    diaChi NVARCHAR(255),
+    soDienThoai VARCHAR(15),
+    userId INT UNIQUE, -- Liên kết 1-1 với Users
+    FOREIGN KEY (userId) REFERENCES Users(userId) ON DELETE CASCADE
+);
+
+-- 4. Bảng BorrowRecords (Mượn trả)
+CREATE TABLE BorrowRecords (
+    borrowId INT IDENTITY(1,1) PRIMARY KEY, -- Tự động tăng ID
+    readerId INT,
+    bookId INT,
+    borrowDate DATE DEFAULT GETDATE(),
+    dueDate DATE,
+    returnDate DATE,
+    status NVARCHAR(50) DEFAULT N'Đang mượn', -- Trạng thái tiếng Việt
+    fineAmount FLOAT DEFAULT 0,
+    FOREIGN KEY (readerId) REFERENCES Readers(readerId) ON DELETE CASCADE,
+    FOREIGN KEY (bookId) REFERENCES Books(bookId) ON DELETE CASCADE
+);
+GO
+
+-- =============================================
+-- PHẦN 3: INSERT DỮ LIỆU MẪU 
+-- =============================================
+
+-- 1. Thêm Users
+INSERT INTO Users (username, password, fullName, email, role) VALUES 
+('admin', '12345', N'Quản Trị Viên', 'admin@library.com', 'Admin'),
+('thuthu', '12345', N'Trần Thị Thủ Thư', 'thuthu@library.com', N'Thủ thư'),
+('docgia1', '12345', N'Nguyễn Văn A', 'nva@gmail.com', N'Độc giả'),
+('docgia2', '12345', N'Lê Thị B', 'ltb@gmail.com', N'Độc giả');
+
+-- 2. Thêm Books
+INSERT INTO Books (maSach, tenSach, tacGia, theLoai, namXB, soLuong, soLuongConLai) VALUES 
+('IT-001', N'Lập trình Java căn bản', N'Phạm Văn Ất', N'Giáo trình', 2020, 10, 10),
+('IT-002', N'Cấu trúc dữ liệu và giải thuật', N'Nguyễn Đức Nghĩa', N'Giáo trình', 2019, 5, 5),
+('NV-001', N'Nhà Giả Kim', N'Paulo Coelho', N'Tiểu thuyết', 2018, 7, 6), -- Đã cho mượn 1 cuốn
+('NV-002', N'Đắc Nhân Tâm', N'Dale Carnegie', N'Kỹ năng sống', 2021, 15, 15),
+('KH-001', N'Vũ trụ trong vỏ hạt dẻ', N'Stephen Hawking', N'Khoa học', 2017, 3, 3);
+
+-- 3. Thêm Readers (Liên kết với Users ở trên)
+-- Lưu ý: userId phải khớp với thứ tự insert ở bảng Users
+INSERT INTO Readers (maDocGia, hoTen, diaChi, soDienThoai, userId) VALUES 
+('DG001', N'Nguyễn Văn A', N'Hà Nội', '0901234567', 3), -- Link với docgia1
+('DG002', N'Lê Thị B', N'TP.HCM', '0909876543', 4); -- Link với docgia2
+
+-- 4. Thêm BorrowRecords (Lịch sử mượn)
+INSERT INTO BorrowRecords (readerId, bookId, borrowDate, dueDate, returnDate, status, fineAmount) VALUES 
+(1, 3, '2023-12-01', '2023-12-15', NULL, N'Đang mượn', 0), -- Độc giả 1 mượn sách 3 chưa trả
+(2, 1, '2023-11-20', '2023-12-05', '2023-12-04', N'Đã trả', 0); -- Độc giả 2 mượn sách 1 đã trả
+
+PRINT N'=== KHỞI TẠO CSDL THÀNH CÔNG ===';
+GO
+
 USE LibraryManagement;
 GO
 
--- 3. TẠO BẢNG USERS (Quản lý tài khoản)
-IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Users' and xtype='U')
-BEGIN
-    CREATE TABLE Users (
-        userId INT IDENTITY(1,1) PRIMARY KEY,
-        username VARCHAR(100) NOT NULL UNIQUE,
-        password VARCHAR(255) NOT NULL, -- Trong thực tế, bạn PHẢI HASH mật khẩu này
-        fullName NVARCHAR(255),
-        email VARCHAR(255) UNIQUE,
-        role NVARCHAR(50) NOT NULL CHECK (role IN ('Admin', 'Thủ thư', 'Độc giả'))
-    );
-END
-GO
+INSERT INTO Books (maSach, tenSach, tacGia, theLoai, namXB, soLuong, soLuongConLai) VALUES 
+-- 1. Sách Công nghệ thông tin (Tiếp nối mã IT)
+('IT-003', N'Clean Code - Mã sạch', N'Robert C. Martin', N'Công nghệ thông tin', 2008, 5, 5),
+('IT-004', N'Design Patterns', N'Erich Gamma', N'Công nghệ thông tin', 1994, 3, 3),
+('IT-005', N'Nhập môn Trí tuệ nhân tạo', N'Stuart Russell', N'Giáo trình', 2021, 10, 10),
+('IT-006', N'Hacker Lược sử', N'Steven Levy', N'Công nghệ thông tin', 2010, 4, 4),
 
--- 4. TẠO BẢNG READERS (Quản lý độc giả)
-IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Readers' and xtype='U')
-BEGIN
-    CREATE TABLE Readers (
-        readerId INT IDENTITY(1,1) PRIMARY KEY,
-        maDocGia VARCHAR(50) NOT NULL UNIQUE,
-        hoTen NVARCHAR(255) NOT NULL,
-        diaChi NVARCHAR(500),
-        soDienThoai VARCHAR(20),
-        
-        -- Mỗi độc giả liên kết với MỘT tài khoản người dùng
-        -- Dùng UNIQUE để đảm bảo mối quan hệ 1-1
-        userId INT NOT NULL UNIQUE, 
-        
-        CONSTRAINT FK_Reader_User FOREIGN KEY (userId) REFERENCES Users(userId)
-    );
-END
-GO
+-- 2. Sách Văn học Việt Nam (Mã VH)
+('VH-001', N'Mắt Biếc', N'Nguyễn Nhật Ánh', N'Văn học VN', 2019, 15, 15),
+('VH-002', N'Dế Mèn phiêu lưu ký', N'Tô Hoài', N'Văn học VN', 2015, 20, 20),
+('VH-003', N'Số Đỏ', N'Vũ Trọng Phụng', N'Văn học VN', 2018, 8, 8),
+('VH-004', N'Tuổi thơ dữ dội', N'Phùng Quán', N'Văn học VN', 2017, 6, 6),
+('VH-005', N'Tắt đèn', N'Ngô Tất Tố', N'Văn học VN', 2016, 10, 10),
 
--- 5. TẠO BẢNG BOOKS (Quản lý sách)
-IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Books' and xtype='U')
-BEGIN
-    CREATE TABLE Books (
-        bookId INT IDENTITY(1,1) PRIMARY KEY,
-        maSach VARCHAR(50) NOT NULL UNIQUE,
-        tenSach NVARCHAR(500) NOT NULL,
-        tacGia NVARCHAR(255),
-        theLoai NVARCHAR(100),
-        namXB INT,
-        soLuong INT NOT NULL,
-        soLuongConLai INT NOT NULL,
+-- 3. Sách Văn học Nước ngoài (Mã NN)
+('NN-001', N'Rừng Na Uy', N'Haruki Murakami', N'Tiểu thuyết', 2000, 7, 7),
+('NN-002', N'Giết con chim nhại', N'Harper Lee', N'Tiểu thuyết', 2020, 12, 12),
+('NN-003', N'Harry Potter và Hòn đá phù thủy', N'J.K. Rowling', N'Viễn tưởng', 1997, 10, 10),
+('NN-004', N'Bố già (The Godfather)', N'Mario Puzo', N'Tiểu thuyết', 2018, 5, 5),
+('NN-005', N'Hoàng tử bé', N'Antoine de Saint-Exupéry', N'Thiếu nhi', 2022, 25, 25),
 
-        -- Đảm bảo số lượng còn lại không thể lớn hơn tổng số lượng
-        CONSTRAINT CHK_SoLuong CHECK (soLuongConLai <= soLuong AND soLuongConLai >= 0)
-    );
-END
-GO
+-- 4. Sách Kinh tế & Quản trị (Mã KT)
+('KT-001', N'Cha giàu cha nghèo', N'Robert Kiyosaki', N'Kinh tế', 2019, 15, 15),
+('KT-002', N'Nhà đầu tư thông minh', N'Benjamin Graham', N'Kinh tế', 2020, 5, 5),
+('KT-003', N'Marketing giỏi phải kiếm được tiền', N'Sergio Zyman', N'Kinh tế', 2016, 8, 8),
 
--- 6. TẠO BẢNG BORROWRECORDS (Quản lý mượn - trả)
-IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='BorrowRecords' and xtype='U')
-BEGIN
-    CREATE TABLE BorrowRecords (
-        borrowId INT IDENTITY(1,1) PRIMARY KEY,
-        readerId INT NOT NULL,
-        bookId INT NOT NULL,
-        
-        borrowDate DATE NOT NULL, -- Ngày mượn
-        dueDate DATE NOT NULL,    -- Ngày hẹn trả
-        returnDate DATE NULL,     -- Ngày trả thực tế (NULL nếu chưa trả)
-        
-        status NVARCHAR(100) NOT NULL, -- Ví dụ: 'Đang mượn', 'Đã trả', 'Quá hạn'
-        fineAmount DECIMAL(10, 2) DEFAULT 0.00, -- Tiền phạt
-        
-        CONSTRAINT FK_Borrow_Reader FOREIGN KEY (readerId) REFERENCES Readers(readerId),
-        CONSTRAINT FK_Borrow_Book FOREIGN KEY (bookId) REFERENCES Books(bookId)
-    );
-END
-GO
-
---- DỮ LIỆU MẪU (TÙY CHỌN) ---
-
-PRINT 'Đã tạo bảng thành công. Đang chèn dữ liệu mẫu...';
-
--- 1. Thêm tài khoản
-INSERT INTO Users (username, password, fullName, email, role)
-VALUES
-('admin', '123', N'Quản Trị Viên', 'admin@thuvien.com', 'Admin'),
-('thuthu', '123', N'Lê Thủ Thư', 'thuthu@thuvien.com', 'Thủ thư'),
-('docgia01', '123', N'Trần Thị Ngọc Anh', 'docgia01@gmail.com', 'Độc giả'),
-('docgia02', '123', N'Nguyễn Văn An', 'nguyenvanan@gmail.com', 'Độc giả'),
-('docgia03', '123', N'Phạm Thị Bình', 'phamthibinh@gmail.com', 'Độc giả'),
-('docgia04', '123', N'Lê Minh Cường', 'leminhcuong@gmail.com', 'Độc giả'),
-('docgia05', '123', N'Hoàng Văn Dũng', 'hoangdung@gmail.com', 'Độc giả'),
-('docgia06', '123', N'Vũ Thị Hoa', 'vuthihoa@gmail.com', 'Độc giả'),
-('docgia07', '123', N'Ngô Minh Khánh', 'ngominhkhanh@gmail.com', 'Độc giả'),
-('docgia08', '123', N'Bùi Thị Lan', 'buithilan@gmail.com', 'Độc giả'),
-('docgia09', '123', N'Phan Văn Long', 'phanvanlong@gmail.com', 'Độc giả');
-
--- 2. Thêm thông tin độc giả (liên kết với tài khoản 'docgia01' có userId = 3)
-INSERT INTO Readers (maDocGia, hoTen, diaChi, soDienThoai, userId)
-VALUES
-('DG001', N'Trần Thị Ngọc Anh', N'123 Đường ABC, Quận 1, TP. HCM', '0909123456', 3),
-('DG002', N'Nguyễn Văn An', N'45 Lê Lợi, Quận 3, TP. HCM', '0912345678', 5),
-('DG003', N'Phạm Thị Bình', N'78 Hai Bà Trưng, Quận 1, TP. HCM', '0987654321', 6),
-('DG004', N'Lê Minh Cường', N'12 Nguyễn Huệ, Quận 5, TP. HCM', '0933123456', 7),
-('DG005', N'Hoàng Văn Dũng', N'25 Nguyễn Trãi, Q.5, TP.HCM', '0908111222', 8),
-('DG006', N'Vũ Thị Hoa', N'88 Trường Chinh, Q.Tân Bình, TP.HCM', '0911222333', 9),
-('DG007', N'Ngô Minh Khánh', N'12 Lạc Long Quân, Q.11, TP.HCM', '0922333444', 10),
-('DG008', N'Bùi Thị Lan', N'101 Âu Cơ, Q.Tân Phú, TP.HCM', '0933444555', 11),
-('DG009', N'Phan Văn Long', N'56 Điện Biên Phủ, Q.Bình Thạnh, TP.HCM', '0944555666', 12);
-
--- 3. Thêm sách
-INSERT INTO Books (maSach, tenSach, tacGia, theLoai, namXB, soLuong, soLuongConLai)
-VALUES
-('BK001', N'Lập trình Java Web', N'Nhiều tác giả', N'Công nghệ thông tin', 2023, 50, 50),
-('BK002', N'SQL Server cơ bản', N'Nguyễn Tác Giả', N'Cơ sở dữ liệu', 2022, 30, 30),
-('BK003', N'Cấu trúc dữ liệu & Giải thuật', N'Vũ Tác Giả', N'Công nghệ thông tin', 2021, 40, 40),
-('BK004', N'Lập trình JSP & Servlet', N'Nguyễn Công Nghệ', N'Công nghệ thông tin', 2020, 20, 20),
-('BK005', N'Hệ điều hành', N'Trần Khoa', N'Khoa học máy tính', 2019, 25, 25),
-('BK006', N'Mạng máy tính', N'Andrew S. Tanenbaum', N'Công nghệ thông tin', 2018, 15, 15),
-('BK007', N'Nhập môn Trí tuệ nhân tạo', N'Stuart Russell', N'Công nghệ thông tin', 2022, 10, 10);
-
-
--- 4. Thêm phiếu mượn (Độc giả DG001 mượn sách BK003)
-INSERT INTO BorrowRecords (readerId, bookId, borrowDate, dueDate, status)
-VALUES
-(5, 2, '2025-11-08', '2025-11-22', N'Đang mượn'),
-(6, 3, '2025-11-09', '2025-11-23', N'Đang mượn'),
-(7, 5, '2025-11-10', '2025-11-24', N'Đang mượn'),
-(8, 6, '2025-11-11', '2025-11-25', N'Đang mượn'),
-(9, 7, '2025-11-12', '2025-11-26', N'Đang mượn');
-
--- 5. Thêm phiếu trả (Độc giả DG004 trả sách BK001)
-INSERT INTO BorrowRecords (readerId, bookId, borrowDate, dueDate, status)
-VALUES
-(4, 1, '2025-10-02', '2025-10-16', '2025-10-15', N'Đã trả'),
-(5, 4, '2025-10-04', '2025-10-18', '2025-10-17', N'Đã trả'),
-(6, 6, '2025-10-06', '2025-10-20', '2025-10-19', N'Đã trả'),
-(7, 2, '2025-10-08', '2025-10-22', '2025-10-21', N'Đã trả'),
-(8, 3, '2025-10-10', '2025-10-24', '2025-10-23', N'Đã trả');
-
--- Cập nhật số sách còn lại sau khi mượn
-UPDATE Books SET soLuongConLai = soLuongConLai - 1 WHERE bookId IN (2,3,5,6,7);
+-- 5. Sách Kỹ năng sống & Tâm lý (Mã KN)
+('KN-001', N'Tư duy nhanh và chậm', N'Daniel Kahneman', N'Tâm lý học', 2011, 6, 6),
+('KN-002', N'Đánh thức con người phi thường trong bạn', N'Anthony Robbins', N'Kỹ năng sống', 2018, 10, 10),
+('KN-003', N'Quẳng gánh lo đi và vui sống', N'Dale Carnegie', N'Kỹ năng sống', 2021, 20, 20);
 
 GO
-
-PRINT 'Hoàn tất tạo CSDL và chèn dữ liệu mẫu.';
-GO
+PRINT N'Đã thêm thành công 20 cuốn sách mới!';

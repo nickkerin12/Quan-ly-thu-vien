@@ -7,8 +7,8 @@ import java.sql.SQLException;
 public class DBConnect {
     
     
-    private static final String DB_URL = "jdbc:sqlserver://LAPTOP-99T6CSB8:1433;databaseName=LibraryManagement;encrypt=true;trustServerCertificate=true;";
-    
+	private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=LibraryManagement;encrypt=true;trustServerCertificate=true;";
+	
     private static final String USER = "sa"; 
     
     private static final String PASS = "12345"; 

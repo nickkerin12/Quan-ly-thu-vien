@@ -12,12 +12,24 @@ import java.io.IOException;
 @WebFilter("/*")
 public class AuthFilter implements Filter {
 
+	
+    // --- HÀM KIỂM TRA QUYỀN ADMIN ---
+    // Dùng equalsIgnoreCase để chấp nhận cả "admin", "Admin", "ADMIN"
+    private boolean isAdmin(HttpServletRequest request) {
+        HttpSession session = request.getSession();
+        User user = (User) session.getAttribute("user");
+        return user != null && "admin".equalsIgnoreCase(user.getRole());
+    }
+	
+	
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
+        
+
         
         // Đặt mã hóa UTF-8 cho toàn bộ request/response
         req.setCharacterEncoding("UTF-8");
@@ -27,12 +39,15 @@ public class AuthFilter implements Filter {
         
         // 1. DANH SÁCH CÁC TRANG CÔNG KHAI (Không cần đăng nhập)
         // Bao gồm: login, register, file css/js, và servlet auth
-        if (uri.contains("/login.jsp") || 
-            uri.contains("/register.jsp") || 
+        if (uri.contains("/register.jsp") || 
+        	uri.contains("/book-list.jsp") || 
+        	uri.contains("/borrow-list.jsp") || 
+            uri.contains("/books") ||
+            uri.contains("/home") ||
             uri.contains("/auth") || 
             uri.contains("/css/") || 
             uri.contains("/js/") || 
-            uri.endsWith("forgot-password.jsp") || // Trang quên mật khẩu sắp làm
+            uri.endsWith("forgot-password.jsp") ||
             uri.contains("/images/")) {
             
             chain.doFilter(request, response);
@@ -43,20 +58,22 @@ public class AuthFilter implements Filter {
         HttpSession session = req.getSession(false);
         User user = (session != null) ? (User) session.getAttribute("user") : null;
 
-        if (user == null) {
-            // Chưa đăng nhập -> Chuyển về trang Login
-            res.sendRedirect(req.getContextPath() + "/pages/login.jsp");
-            return;
-        }
-
         // 3. PHÂN QUYỀN ADMIN (AUTHORIZATION)
         // Nếu truy cập trang quản lý Sách hoặc Độc giả mà không phải Admin
         boolean isAdminPage = uri.contains("/books") || uri.contains("/readers");
-        boolean isAdminUser = "Admin".equalsIgnoreCase(user.getRole()) || "Thủ thư".equalsIgnoreCase(user.getRole());
+        boolean isAdminUser = ((user != null)
+        		&&("Admin".equalsIgnoreCase(user.getRole()) || "Thủ thư".equalsIgnoreCase(user.getRole())));
 
-        if (isAdminPage && !isAdminUser) {
+        if (isAdminPage && !isAdmin(req)) {
             // Người thường cố tình vào trang Admin -> Đẩy về trang chủ hoặc báo lỗi
-            res.sendRedirect(req.getContextPath() + "/index.jsp");
+        	req.setAttribute("error", "Bạn phải là ADMIN hoặc THỦ THƯ mới dùng được chức năng này");
+            req.getRequestDispatcher("/home").forward(req, res);
+            return;
+        }
+         if (user == null) {
+            // Chưa đăng nhập mà vào trang chức năng -> Chuyển về trang chủ
+        	req.setAttribute("error", "Bạn phải đăng nhập mới dùng được chức năng này");
+        	req.getRequestDispatcher("/home").forward(req, res);
             return;
         }
 

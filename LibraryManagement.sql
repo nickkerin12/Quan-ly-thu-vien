@@ -18,7 +18,7 @@ BEGIN
         password VARCHAR(255) NOT NULL, -- Trong thực tế, bạn PHẢI HASH mật khẩu này
         fullName NVARCHAR(255),
         email VARCHAR(255) UNIQUE,
-        role VARCHAR(50) NOT NULL CHECK (role IN ('Admin', 'Thủ thư', 'Độc giả'))
+        role NVARCHAR(50) NOT NULL CHECK (role IN ('Admin', 'Thủ thư', 'Độc giả'))
     );
 END
 GO

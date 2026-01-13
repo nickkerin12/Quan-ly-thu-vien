@@ -32,13 +32,6 @@ public class ReaderController extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 
-//		// --- BẢO MẬT: Chặn truy cập nếu không phải Admin ---
-//		if (!isAdmin(request)) {
-//			response.sendRedirect(request.getContextPath() + "/home");
-//			return;
-//		}
-		// --------------------------------------------------
-
 		String action = request.getParameter("action");
 		if (action == null)
 			action = "list";
@@ -65,12 +58,6 @@ public class ReaderController extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
 		request.setCharacterEncoding("UTF-8");
-
-//		// --- BẢO MẬT: Chặn truy cập nếu không phải Admin ---
-//		if (!isAdmin(request)) {
-//			response.sendRedirect(request.getContextPath() + "/home");
-//			return;
-//		}
 
 		String idStr = request.getParameter("readerId");
 		int readerId = (idStr == null || idStr.isEmpty()) ? 0 : Integer.parseInt(idStr);

@@ -64,18 +64,20 @@ public class AuthFilter implements Filter {
         boolean isAdminUser = ((user != null)
         		&&("Admin".equalsIgnoreCase(user.getRole()) || "Thủ thư".equalsIgnoreCase(user.getRole())));
 
+		if (user == null) {
+            // Chưa đăng nhập mà vào trang chức năng -> Chuyển về trang chủ
+        	req.setAttribute("error", "Bạn phải đăng nhập mới dùng được chức năng này");
+        	req.getRequestDispatcher("/home").forward(req, res);
+            return;
+        }
+				
         if (isAdminPage && !isAdmin(req)) {
             // Người thường cố tình vào trang Admin -> Đẩy về trang chủ hoặc báo lỗi
         	req.setAttribute("error", "Bạn phải là ADMIN hoặc THỦ THƯ mới dùng được chức năng này");
             req.getRequestDispatcher("/home").forward(req, res);
             return;
         }
-         if (user == null) {
-            // Chưa đăng nhập mà vào trang chức năng -> Chuyển về trang chủ
-        	req.setAttribute("error", "Bạn phải đăng nhập mới dùng được chức năng này");
-        	req.getRequestDispatcher("/home").forward(req, res);
-            return;
-        }
+
 
         // Cho phép đi tiếp
         chain.doFilter(request, response);

@@ -73,7 +73,7 @@ public class AuthFilter implements Filter {
 				
         if (isAdminPage && !isAdmin(req)) {
             // Người thường cố tình vào trang Admin -> Đẩy về trang chủ hoặc báo lỗi
-        	req.setAttribute("error", "Bạn phải là ADMIN hoặc THỦ THƯ mới dùng được chức năng này");
+        	req.setAttribute("error", "Bạn phải là ADMIN mới dùng được chức năng này");
             req.getRequestDispatcher("/home").forward(req, res);
             return;
         }
